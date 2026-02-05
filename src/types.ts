@@ -30,7 +30,9 @@ export type RouterReport = {
   tx: {
     encoding: 'base64' | 'unknown';
     lengthBytes?: number;
+    // Note: an Action tx may be partially-signed or unsigned; signature may be absent/invalid.
     signature?: string;
+    touchedProgramIds?: string[];
   } | null;
   simulation?: {
     ok: boolean;

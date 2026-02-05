@@ -4,9 +4,11 @@ import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { getBase58Decoder } from '@solana/kit';
+import { Connection } from '@solana/web3.js';
 
 import { actionGet, actionPost, normalizeActionUrl } from './actions.js';
 import { evaluatePolicy } from './policy.js';
+import { decodeVersionedTransactionFromBase64, extractTouchedProgramIds, fetchLookupTableAccounts } from './tx.js';
 import type { Policy, RouterReport } from './types.js';
 
 function usage() {
@@ -63,30 +65,55 @@ async function main() {
   // 2) POST to get tx (best-effort default body)
   // NOTE: Different Actions require different POST bodies. For MVP we support empty/default.
   try {
-    // Heuristic: use the actionUrl itself as endpoint.
     const { txBase64 } = await actionPost(actionUrl, {});
     report.post = { endpoint: actionUrl, ok: true };
 
-    if (txBase64) {
+    if (!txBase64) {
+      report.tx = null;
+      report.policy = { passed: false, reasons: ['No transaction returned by POST'] };
+    } else {
       const bytes = Buffer.from(txBase64, 'base64');
       report.tx = { encoding: 'base64', lengthBytes: bytes.length };
 
-      // Best-effort: decode first signature (tx is a serialized versioned tx)
-      // We keep parsing minimal for now.
-      const sig = bytes.subarray(1, 1 + 64); // not always correct; placeholder
-      report.tx.signature = getBase58Decoder().decode(sig as any);
+      // Proper decode (VersionedTransaction)
+      const vtx = decodeVersionedTransactionFromBase64(txBase64);
 
-      // Best-effort program-id extraction is non-trivial without full message decode.
-      // For now, no touched programs => policy evaluation is conservative.
-      const policyEval = evaluatePolicy({ policy, touchedProgramIds: [] });
+      // Signatures may be all-zero placeholders; still useful to surface.
+      const sig0 = vtx.signatures?.[0];
+      if (sig0 && sig0.length === 64) {
+        report.tx.signature = getBase58Decoder().decode(sig0 as any);
+      }
+
+      // Resolve lookup tables (if any) so programIdIndex mapping is correct.
+      const connection = new Connection(rpcUrl);
+      const lookupTables = await fetchLookupTableAccounts({ connection, tx: vtx });
+      const touchedProgramIds = extractTouchedProgramIds({ tx: vtx, lookupTables });
+      report.tx.touchedProgramIds = touchedProgramIds;
+
+      // Simulate (safe: does not send)
+      try {
+        const sim = await connection.simulateTransaction(vtx, {
+          sigVerify: false,
+          replaceRecentBlockhash: true,
+          commitment: 'processed',
+        } as any);
+        report.simulation = {
+          ok: sim.value.err == null,
+          err: sim.value.err ? JSON.stringify(sim.value.err) : undefined,
+          logs: sim.value.logs ?? undefined,
+        };
+      } catch (e: any) {
+        report.simulation = { ok: false, err: String(e?.message ?? e) };
+      }
+
+      // Policy evaluation (denylist/allowlist + approval gate)
+      const policyEval = evaluatePolicy({ policy, touchedProgramIds });
       report.policy.passed = policyEval.passed && !policy.requireApproval;
       report.policy.reasons = policyEval.reasons;
 
-      // TODO: simulate + account/program extraction using kit decoders.
-      void rpcUrl; // reserved
-    } else {
-      report.tx = null;
-      report.policy = { passed: false, reasons: ['No transaction returned by POST'] };
+      if (policy.requireApproval) {
+        report.policy.passed = false;
+      }
     }
   } catch (e: any) {
     report.post = { endpoint: actionUrl, ok: false, error: String(e?.message ?? e) };
