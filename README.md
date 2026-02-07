@@ -1,6 +1,6 @@
 # BlinkGuard
 
-<img src="./assets/blinkguard.svg" alt="BlinkGuard" width="140" />
+<img src="./assets/blinkguard_pixel.svg" alt="BlinkGuard" width="160" />
 
 Colosseum Agent Hackathon (Feb 2–12, 2026)
 
