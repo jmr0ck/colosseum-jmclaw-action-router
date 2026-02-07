@@ -7,6 +7,8 @@ import { Bot, InlineKeyboard } from 'grammy';
 import { analyzeAction } from './analyze.js';
 import { resolveToActionUrl } from './resolve.js';
 import { getUserPrefs, setUserWallet } from './userstore.js';
+import { getCallbackPayload, putCallbackPayload } from './callbackStore.js';
+import { formatEli5, formatReceipts, formatShare, formatShort } from './present.js';
 import { getPlayer, leaderboard, recordRound } from './game.js';
 import { scoreRisk, verdictFromScore } from './risk.js';
 
@@ -62,73 +64,19 @@ bot.command('help', async (ctx) => {
   );
 });
 
-const PROGRAM_LABELS: Record<string, string> = {
-  // core
-  '11111111111111111111111111111111': 'System Program',
-  'ComputeBudget111111111111111111111111111111': 'Compute Budget',
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA': 'SPL Token',
-  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL': 'Associated Token Account',
-  'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr': 'Memo',
-};
-
-function fmtProgram(p: string) {
-  const label = PROGRAM_LABELS[p];
-  return label ? `${p} (${label})` : p;
-}
+// program labels now live in receipts formatting (src/present.ts)
+// (program label helper moved to receipts view elsewhere)
 
 function formatReport(report: any, opts?: { preface?: string }): string {
-  const title = report?.get?.title ?? '(no title)';
-  const desc = report?.get?.description ?? '';
-  const touched: string[] = report?.tx?.touchedProgramIds ?? [];
-
-  const simOk = report?.simulation?.ok;
-  const simErr = report?.simulation?.err;
-
-  const { score, signals } = scoreRisk(report);
-  const verdict = verdictFromScore(score);
-
-  const topLogs: string[] = (report?.simulation?.logs ?? []).slice(0, 8);
-
-  const lines: string[] = [];
-  if (opts?.preface) lines.push(opts.preface);
-
-  const verdictWord = verdict === 'RUG' ? '🚩 RUGGY' : verdict === 'MID' ? '🟡 MID' : '✅ REAL-ish';
-  lines.push(`🛡️ BlinkGuard verdict: ${verdictWord} (risk ${score}/100)`);
-  lines.push(`Title: ${title}`);
-  if (desc) lines.push(`Desc: ${desc}`);
-  lines.push(`URL: ${report.actionUrl}`);
-
-  lines.push('');
-  lines.push('Why:');
-  for (const s of signals.slice(0, 5)) {
-    lines.push(`- [${s.severity}] ${s.message}`);
-  }
-
-  lines.push('');
-  lines.push(`Touched programs (${touched.length}):`);
-  if (touched.length) {
-    for (const p of touched.slice(0, 12)) lines.push(`- ${fmtProgram(p)}`);
-    if (touched.length > 12) lines.push(`- ... (+${touched.length - 12} more)`);
-  } else {
-    lines.push('- (none detected)');
-  }
-
-  lines.push('');
-  lines.push(`Simulation: ${simOk ? 'OK' : 'FAIL'}`);
-  if (!simOk && simErr) lines.push(`Sim err: ${simErr}`);
-
-  if (topLogs.length) {
-    lines.push('');
-    lines.push('Top logs:');
-    for (const l of topLogs) lines.push(`- ${l}`);
-  }
-
-  return lines.join('\n');
+  // legacy wrapper; default to short CT-friendly view
+  const parts: string[] = [];
+  if (opts?.preface) parts.push(opts.preface);
+  parts.push(formatShort(report));
+  return parts.join('\n\n');
 }
 
 async function analyzeAndReply(ctx: any, actionUrl: string, rpcUrl = DEFAULT_RPC) {
   const policy = {
-    // Conservative defaults: report-only.
     requireApproval: true,
   };
 
@@ -138,16 +86,27 @@ async function analyzeAndReply(ctx: any, actionUrl: string, rpcUrl = DEFAULT_RPC
 
   const report = await analyzeAction({ actionUrlArg: actionUrl, rpcUrl, policy, postBody });
 
-  const kb = new InlineKeyboard().text('Re-run (mainnet)', `rerun|mainnet|${actionUrl}`);
-  kb.text('Re-run (devnet)', `rerun|devnet|${actionUrl}`);
+  // store payload for short callback_data
+  const cbId = putCallbackPayload({ actionUrl, rpcUrl });
+
+  const kb = new InlineKeyboard();
+  kb.text('Explain (ELI5)', `ui|eli5|${cbId}`);
+  kb.text('Receipts', `ui|receipts|${cbId}`);
+  kb.text('Share', `ui|share|${cbId}`);
+
+  kb.row();
+  kb.text('Re-run mainnet', `ui|rerun|mainnet|${cbId}`);
+  kb.text('Re-run devnet', `ui|rerun|devnet|${cbId}`);
 
   // mini-game buttons
   kb.row();
-  kb.text('✅ REAL', `guess|REAL|${rpcUrl}|${actionUrl}`);
-  kb.text('🚩 RUG', `guess|RUG|${rpcUrl}|${actionUrl}`);
-  kb.text('🤷 IDK', `guess|IDK|${rpcUrl}|${actionUrl}`);
+  kb.text('✅ REAL', `ui|guess|REAL|${cbId}`);
+  kb.text('🚩 RUG', `ui|guess|RUG|${cbId}`);
+  kb.text('🤷 IDK', `ui|guess|IDK|${cbId}`);
 
-  await ctx.reply(formatReport(report), {
+  const needsWalletHint = !prefs.wallet ? '\n\nTip: set a wallet for better simulations: /setwallet <pubkey>' : '';
+
+  await ctx.reply(formatReport(report) + needsWalletHint, {
     reply_markup: kb,
     link_preview_options: { is_disabled: true },
   });
@@ -213,7 +172,57 @@ bot.on('message:text', async (ctx) => {
   const txt = ctx.message.text.trim();
   if (txt.startsWith('/')) return;
 
-  const first = txt.split(/\s+/)[0];
+  const tokens = txt.split(/\s+/).filter(Boolean);
+  const urls = tokens.filter((t) => /^https?:\/\//i.test(t) || t.startsWith('solana-action:') || t.includes('dial.to'));
+
+  // Batch mode: if they pasted multiple links, rank them.
+  if (urls.length >= 2) {
+    await ctx.reply(`Batch mode: scanning ${Math.min(urls.length, 5)} links…`, {
+      link_preview_options: { is_disabled: true },
+    });
+
+    const uid = ctx.from?.id;
+    const prefs = uid ? getUserPrefs(uid) : {};
+    const postBody = prefs.wallet ? { account: prefs.wallet } : {};
+
+    const results: Array<{ input: string; actionUrl?: string; score: number; verdict: string; why: string }> = [];
+
+    for (const u of urls.slice(0, 5)) {
+      try {
+        const resolved = await resolveToActionUrl(u);
+        if (resolved.kind !== 'action') {
+          results.push({ input: u, score: 50, verdict: '🟡 MID', why: 'no Action found (actions.json missing?)' });
+          continue;
+        }
+
+        const report = await analyzeAction({
+          actionUrlArg: resolved.actionUrl,
+          rpcUrl: DEFAULT_RPC,
+          policy: { requireApproval: true },
+          postBody,
+        });
+
+        const { score, signals } = scoreRisk(report);
+        const v = verdictFromScore(score);
+        const verdictWord = v === 'RUG' ? '🚩 RUG' : v === 'MID' ? '🟡 MID' : '✅ REAL';
+        const why = signals.filter((s) => s.code !== 'CLEAN').slice(0, 1)[0]?.message ?? 'no obvious flags';
+
+        results.push({ input: u, actionUrl: resolved.actionUrl, score, verdict: verdictWord, why });
+      } catch {
+        results.push({ input: u, score: 60, verdict: '🟡 MID', why: 'error fetching' });
+      }
+    }
+
+    results.sort((a, b) => b.score - a.score);
+
+    const lines = results.map((r, i) => `${i + 1}) ${r.verdict} (${r.score}/100) — ${r.why}\n   ${r.input}`);
+    await ctx.reply(['🧪 Batch results (highest risk first)', ...lines].join('\n\n'), {
+      link_preview_options: { is_disabled: true },
+    });
+    return;
+  }
+
+  const first = urls[0] ?? txt;
 
   await ctx.reply('👀 gimme the link… sim-only, no send. (Tip: /setwallet <pubkey> for real sims)', {
     link_preview_options: { is_disabled: true },
@@ -223,7 +232,7 @@ bot.on('message:text', async (ctx) => {
     const resolved = await resolveToActionUrl(first);
     if (resolved.kind !== 'action') {
       await ctx.reply(
-        `Couldn’t find a Solana Action behind that link. If it’s a Blink, paste the dial.to/solana-action link.\nLink: ${first}`,
+        `Couldn’t find a Solana Action behind that link. Paste a blink (dial.to) or any Solana page with actions.json.\nLink: ${first}`,
         { link_preview_options: { is_disabled: true } },
       );
       return;
@@ -238,27 +247,73 @@ bot.on('callback_query:data', async (ctx) => {
   const data = ctx.callbackQuery.data;
   const parts = data.split('|');
 
-  if (parts[0] === 'rerun') {
-    const net = parts[1];
-    const actionUrl = parts.slice(2).join('|');
+  if (parts[0] !== 'ui') return;
 
-    const rpcUrl =
-      net === 'devnet' ? 'https://api.devnet.solana.com' : 'https://api.mainnet-beta.solana.com';
+  const action = parts[1];
 
+  if (action === 'rerun') {
+    const net = parts[2];
+    const cbId = parts[3];
+    const payload = getCallbackPayload(cbId);
+    if (!payload) {
+      await ctx.answerCallbackQuery({ text: 'expired. paste link again.' });
+      return;
+    }
+
+    const rpcUrl = net === 'devnet' ? 'https://api.devnet.solana.com' : 'https://api.mainnet-beta.solana.com';
     await ctx.answerCallbackQuery({ text: `Re-running on ${net}…` });
 
     try {
-      await analyzeAndReply(ctx, actionUrl, rpcUrl);
+      await analyzeAndReply(ctx, payload.actionUrl, rpcUrl);
     } catch (e: any) {
       await ctx.reply(`Error: ${String(e?.message ?? e)}`);
     }
     return;
   }
 
-  if (parts[0] === 'guess') {
-    const guess = parts[1] as 'REAL' | 'RUG' | 'IDK';
-    const rpcUrl = parts[2];
-    const actionUrl = parts.slice(3).join('|');
+  if (action === 'eli5' || action === 'receipts' || action === 'share') {
+    const cbId = parts[2];
+    const payload = getCallbackPayload(cbId);
+    if (!payload) {
+      await ctx.answerCallbackQuery({ text: 'expired. paste link again.' });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: action === 'share' ? 'copy-paste this 👇' : 'ok' });
+
+    try {
+      const prefs = ctx.from?.id ? getUserPrefs(ctx.from.id) : {};
+      const postBody = prefs.wallet ? { account: prefs.wallet } : {};
+
+      const report = await analyzeAction({
+        actionUrlArg: payload.actionUrl,
+        rpcUrl: payload.rpcUrl,
+        policy: { requireApproval: true },
+        postBody,
+      });
+
+      const text =
+        action === 'eli5'
+          ? formatEli5(report)
+          : action === 'receipts'
+            ? formatReceipts(report)
+            : formatShare(report);
+
+      await ctx.reply(text, { link_preview_options: { is_disabled: true } });
+    } catch (e: any) {
+      await ctx.reply(`Error: ${String(e?.message ?? e)}`);
+    }
+    return;
+  }
+
+  if (action === 'guess') {
+    const guess = parts[2] as 'REAL' | 'RUG' | 'IDK';
+    const cbId = parts[3];
+    const payload = getCallbackPayload(cbId);
+    if (!payload) {
+      await ctx.answerCallbackQuery({ text: 'expired. paste link again.' });
+      return;
+    }
 
     await ctx.answerCallbackQuery({ text: `Locking in: ${guess}` });
 
@@ -267,8 +322,8 @@ bot.on('callback_query:data', async (ctx) => {
       const postBody = prefs.wallet ? { account: prefs.wallet } : {};
 
       const report = await analyzeAction({
-        actionUrlArg: actionUrl,
-        rpcUrl,
+        actionUrlArg: payload.actionUrl,
+        rpcUrl: payload.rpcUrl,
         policy: { requireApproval: true },
         postBody,
       });
@@ -280,17 +335,17 @@ bot.on('callback_query:data', async (ctx) => {
       const bonus = verdict === 'RUG' && report.simulation?.ok === false ? 5 : 0;
 
       const p = recordRound({
-        userId: ctx.from.id,
+        userId: ctx.from!.id,
         correct,
         basePoints: base,
         bonusPoints: bonus,
       });
 
       const preface = correct
-        ? `✅ good call, anon. +${base + bonus} (streak bonus applied if first play today).\nYour score: ${p.score} | streak: ${p.streak} | rounds: ${p.rounds}`
-        : `💀 you got farmed. (streak bonus still applies once/day).\nYour score: ${p.score} | streak: ${p.streak} | rounds: ${p.rounds}`;
+        ? `✅ good call, anon. +${base + bonus} (streak bonus applies once/day).\nScore: ${p.score} | streak: ${p.streak} | rounds: ${p.rounds}`
+        : `💀 you got farmed. (streak bonus applies once/day).\nScore: ${p.score} | streak: ${p.streak} | rounds: ${p.rounds}`;
 
-      await ctx.reply(formatReport(report, { preface }), {
+      await ctx.reply(preface + '\n\n' + formatShort(report), {
         link_preview_options: { is_disabled: true },
       });
     } catch (e: any) {
