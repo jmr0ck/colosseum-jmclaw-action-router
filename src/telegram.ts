@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import { Bot, InlineKeyboard } from 'grammy';
 
 import { analyzeAction } from './analyze.js';
+import { resolveToActionUrl } from './resolve.js';
+import { getUserPrefs, setUserWallet } from './userstore.js';
 import { getPlayer, leaderboard, recordRound } from './game.js';
 import { scoreRisk, verdictFromScore } from './risk.js';
 
@@ -44,12 +46,13 @@ bot.command('start', async (ctx) => {
 bot.command('help', async (ctx) => {
   await ctx.reply(
     [
-      'Send a Blink/Action URL and I will analyze it.',
+      'Paste ANY Solana link. BlinkGuard will try to find the underlying Action (actions.json / dial.to / solana-action) and simulate it.',
       '',
       'Commands:',
-      '/play  — start the "Rug or Real" mini-game',
-      '/lb    — leaderboard',
-      '/me    — your stats',
+      '/setwallet <pubkey> — set your wallet address for simulation',
+      '/play               — start the "Rug or Real" mini-game',
+      '/lb                 — leaderboard',
+      '/me                 — your stats',
       '/help',
       '',
       'Notes:',
@@ -129,7 +132,11 @@ async function analyzeAndReply(ctx: any, actionUrl: string, rpcUrl = DEFAULT_RPC
     requireApproval: true,
   };
 
-  const report = await analyzeAction({ actionUrlArg: actionUrl, rpcUrl, policy });
+  const uid = ctx.from?.id;
+  const prefs = uid ? getUserPrefs(uid) : {};
+  const postBody = prefs.wallet ? { account: prefs.wallet } : {};
+
+  const report = await analyzeAction({ actionUrlArg: actionUrl, rpcUrl, policy, postBody });
 
   const kb = new InlineKeyboard().text('Re-run (mainnet)', `rerun|mainnet|${actionUrl}`);
   kb.text('Re-run (devnet)', `rerun|devnet|${actionUrl}`);
@@ -145,6 +152,23 @@ async function analyzeAndReply(ctx: any, actionUrl: string, rpcUrl = DEFAULT_RPC
     link_preview_options: { is_disabled: true },
   });
 }
+
+bot.command('setwallet', async (ctx) => {
+  const uid = ctx.from?.id;
+  if (!uid) return;
+  const parts = ctx.message?.text?.trim().split(/\s+/) ?? [];
+  const wallet = parts[1];
+  if (!wallet) {
+    await ctx.reply('Usage: /setwallet <your Solana public key>', {
+      link_preview_options: { is_disabled: true },
+    });
+    return;
+  }
+  setUserWallet(uid, wallet);
+  await ctx.reply(`Saved. I will use this wallet for simulation: ${wallet}`, {
+    link_preview_options: { is_disabled: true },
+  });
+});
 
 bot.command('play', async (ctx) => {
   const uid = ctx.from?.id;
@@ -191,12 +215,20 @@ bot.on('message:text', async (ctx) => {
 
   const first = txt.split(/\s+/)[0];
 
-  await ctx.reply('Analyzing… (simulate-only). Place your degen bet in ~5s.', {
+  await ctx.reply('👀 gimme the link… sim-only, no send. (Tip: /setwallet <pubkey> for real sims)', {
     link_preview_options: { is_disabled: true },
   });
 
   try {
-    await analyzeAndReply(ctx, first);
+    const resolved = await resolveToActionUrl(first);
+    if (resolved.kind !== 'action') {
+      await ctx.reply(
+        `Couldn’t find a Solana Action behind that link. If it’s a Blink, paste the dial.to/solana-action link.\nLink: ${first}`,
+        { link_preview_options: { is_disabled: true } },
+      );
+      return;
+    }
+    await analyzeAndReply(ctx, resolved.actionUrl);
   } catch (e: any) {
     await ctx.reply(`Error: ${String(e?.message ?? e)}`);
   }
@@ -231,10 +263,14 @@ bot.on('callback_query:data', async (ctx) => {
     await ctx.answerCallbackQuery({ text: `Locking in: ${guess}` });
 
     try {
+      const prefs = ctx.from?.id ? getUserPrefs(ctx.from.id) : {};
+      const postBody = prefs.wallet ? { account: prefs.wallet } : {};
+
       const report = await analyzeAction({
         actionUrlArg: actionUrl,
         rpcUrl,
         policy: { requireApproval: true },
+        postBody,
       });
       const { score } = scoreRisk(report);
       const verdict = verdictFromScore(score);

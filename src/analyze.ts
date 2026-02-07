@@ -13,6 +13,7 @@ export async function analyzeAction(opts: {
   actionUrlArg: string;
   rpcUrl: string;
   policy?: Policy;
+  postBody?: Record<string, unknown>;
 }): Promise<RouterReport> {
   const { actionUrlArg, rpcUrl, policy = {} } = opts;
 
@@ -36,7 +37,7 @@ export async function analyzeAction(opts: {
 
   // 2) POST to get tx
   try {
-    const { txBase64 } = await actionPost(actionUrl, {});
+    const { txBase64 } = await actionPost(actionUrl, opts.postBody ?? {});
     report.post = { endpoint: actionUrl, ok: true };
 
     if (!txBase64) {

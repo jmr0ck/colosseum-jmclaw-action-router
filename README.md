@@ -1,4 +1,6 @@
-# Blinks-as-Tasks: Agent-native Action Router
+# BlinkGuard
+
+<img src="./assets/blinkguard.svg" alt="BlinkGuard" width="140" />
 
 Colosseum Agent Hackathon (Feb 2–12, 2026)
 
