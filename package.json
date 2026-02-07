@@ -8,6 +8,7 @@
     "dev:server": "tsx src/server.ts",
     "dev:telegram": "tsx src/telegram.ts",
     "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
     "lint": "eslint .",
     "format": "prettier -w .",
     "check": "npm run build && npm run lint"
