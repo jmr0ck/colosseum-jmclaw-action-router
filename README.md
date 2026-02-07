@@ -7,13 +7,36 @@ Avatar icon (for Telegram): `assets/blinkguard_logo.jpg`
 Colosseum Agent Hackathon (Feb 2–12, 2026)
 
 ## One-liner
-Turn Solana **Actions / Blinks** into safe, policy-checked **tasks** an agent (or supervised human) can execute.
+Paste any Solana link → BlinkGuard finds the underlying **Action/Blink**, **simulates** it, and returns a degen-friendly **REAL/MID/RUG** verdict.
+
+## What works right now (MVP)
+- ✅ Action/Blink URL normalization (dial.to / solana-action / direct)
+- ✅ **actions.json autodiscovery** (paste normal URLs like `https://jup.ag/swap/USDC-SOL`)
+- ✅ Decode base64 **VersionedTransaction** + resolve ALTs + extract **touched program IDs**
+- ✅ RPC **simulation** (simulate-only; does NOT send transactions)
+- ✅ Telegram bot UX: short verdict + **ELI5 / Receipts / Share** + mini-game
+- ✅ Batch scan (paste multiple links)
+
+> Note: execution/signing is intentionally not enabled in this hackathon MVP.
 
 ## Web demo (local)
 ```bash
 npm i
 npm run dev:server
 # open http://localhost:8787
+```
+
+## Telegram bot (local)
+```bash
+# set token via env var (recommended)
+export TELEGRAM_BOT_TOKEN="..."
+
+npm run dev:telegram
+
+# in Telegram:
+# /start
+# /setwallet <your pubkey>
+# paste any link
 ```
 
 ## Why
