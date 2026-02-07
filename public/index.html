@@ -137,6 +137,12 @@
         <textarea id="link" placeholder="Example: https://jup.ag/swap/USDC-SOL"></textarea>
 
         <div class="row">
+          <span class="pill">Optional:</span>
+          <span class="pill">account/pubkey for better sims</span>
+        </div>
+        <textarea id="acct" placeholder="(optional) Solana pubkey for simulation"></textarea>
+
+        <div class="row">
           <button class="btn" id="analyze">Analyze</button>
           <button class="btn secondary" id="eli5">Explain (ELI5)</button>
           <button class="btn secondary" id="receipts">Receipts</button>
@@ -161,6 +167,7 @@
       const el = (id) => document.getElementById(id);
       const out = el('out');
       const link = el('link');
+      const acct = el('acct');
 
       let lastReport = null;
 
@@ -176,7 +183,7 @@
         const res = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ actionUrl })
+          body: JSON.stringify({ actionUrl, account: acct.value.trim() || undefined })
         });
 
         const data = await res.json();
