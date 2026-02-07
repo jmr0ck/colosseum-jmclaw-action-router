@@ -54,6 +54,28 @@ async function main() {
     return;
   }
 
+  if (cmd === 'pin') {
+    const userId = process.env.X_USER_ID;
+    const tweetId = process.argv[3];
+    if (!userId) throw new Error('Missing X_USER_ID env var');
+    if (!tweetId) throw new Error('Usage: pin <tweetId>');
+    const r = await client.v2.post(`users/${userId}/pinned_tweets`, { tweet_id: tweetId });
+    console.log(JSON.stringify(r, null, 2));
+    return;
+  }
+
+  if (cmd === 'tweet-media') {
+    const text = process.argv[3] ?? '';
+    const mediaPath = process.argv[4];
+    if (!mediaPath) throw new Error('Usage: tweet-media "text" <mediaPath>');
+
+    // Upload via v1.1 media endpoint
+    const mediaId = await client.v1.uploadMedia(mediaPath);
+    const r = await client.v2.tweet({ text, media: { media_ids: [mediaId] } });
+    console.log(JSON.stringify(r, null, 2));
+    return;
+  }
+
   if (cmd === 'loadenv') {
     // helper: prints exports for .secrets file (do not log secrets in chat)
     const p = process.argv[3];
