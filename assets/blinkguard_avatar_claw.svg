@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BlinkGuard Avatar Claw">
+  <defs>
+    <linearGradient id="sol" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <style>
+      .px { shape-rendering: crispEdges; image-rendering: pixelated; }
+      .o { fill:#070A12; }  /* outline */
+      .g { fill:url(#sol); }
+      .h { fill:#EAF0FF; }  /* highlight */
+      .m { fill:#111827; }  /* mid shadow */
+    </style>
+  </defs>
+
+  <!-- Black background -->
+  <rect width="512" height="512" fill="#000"/>
+
+  <!-- Pixel claw on a 24px grid (bigger blocks for readability) -->
+  <g class="px">
+    <!-- Outline (one big readable silhouette) -->
+    <g class="o">
+      <!-- top fingers -->
+      <rect x="136" y="120" width="24" height="24"/>
+      <rect x="160" y="96" width="24" height="24"/>
+      <rect x="184" y="72" width="24" height="24"/>
+      <rect x="208" y="72" width="24" height="24"/>
+      <rect x="232" y="96" width="24" height="24"/>
+      <rect x="256" y="120" width="24" height="24"/>
+
+      <rect x="256" y="120" width="24" height="24"/>
+      <rect x="280" y="144" width="24" height="24"/>
+      <rect x="304" y="168" width="24" height="24"/>
+
+      <!-- sides -->
+      <rect x="112" y="144" width="24" height="24"/>
+      <rect x="88" y="168" width="24" height="24"/>
+      <rect x="64" y="192" width="24" height="24"/>
+      <rect x="64" y="216" width="24" height="24"/>
+      <rect x="64" y="240" width="24" height="24"/>
+      <rect x="64" y="264" width="24" height="24"/>
+      <rect x="64" y="288" width="24" height="24"/>
+
+      <rect x="328" y="192" width="24" height="24"/>
+      <rect x="352" y="216" width="24" height="24"/>
+      <rect x="352" y="240" width="24" height="24"/>
+      <rect x="352" y="264" width="24" height="24"/>
+      <rect x="352" y="288" width="24" height="24"/>
+
+      <!-- bottom curve -->
+      <rect x="88" y="312" width="24" height="24"/>
+      <rect x="112" y="336" width="24" height="24"/>
+      <rect x="136" y="360" width="24" height="24"/>
+      <rect x="160" y="384" width="24" height="24"/>
+      <rect x="184" y="408" width="24" height="24"/>
+      <rect x="208" y="408" width="24" height="24"/>
+      <rect x="232" y="408" width="24" height="24"/>
+      <rect x="256" y="384" width="24" height="24"/>
+      <rect x="280" y="360" width="24" height="24"/>
+      <rect x="304" y="336" width="24" height="24"/>
+      <rect x="328" y="312" width="24" height="24"/>
+
+      <!-- inner bite / thumb gap -->
+      <rect x="184" y="144" width="24" height="24"/>
+      <rect x="208" y="144" width="24" height="24"/>
+    </g>
+
+    <!-- Fill gradient -->
+    <g class="g">
+      <rect x="136" y="144" width="24" height="24"/>
+      <rect x="160" y="120" width="24" height="24"/>
+      <rect x="184" y="96" width="24" height="24"/>
+      <rect x="208" y="96" width="24" height="24"/>
+      <rect x="232" y="120" width="24" height="24"/>
+      <rect x="256" y="144" width="24" height="24"/>
+
+      <rect x="112" y="168" width="24" height="24"/>
+      <rect x="88" y="192" width="24" height="24"/>
+      <rect x="88" y="216" width="24" height="24"/>
+      <rect x="88" y="240" width="24" height="24"/>
+      <rect x="88" y="264" width="24" height="24"/>
+      <rect x="88" y="288" width="24" height="24"/>
+
+      <rect x="112" y="312" width="24" height="24"/>
+      <rect x="136" y="336" width="24" height="24"/>
+      <rect x="160" y="360" width="24" height="24"/>
+      <rect x="184" y="384" width="72" height="24"/>
+      <rect x="256" y="360" width="24" height="24"/>
+      <rect x="280" y="336" width="24" height="24"/>
+      <rect x="304" y="312" width="24" height="24"/>
+
+      <rect x="328" y="216" width="24" height="96"/>
+      <rect x="304" y="192" width="24" height="24"/>
+      <rect x="280" y="168" width="24" height="24"/>
+
+      <!-- keep the gap empty (thumb bite) -->
+    </g>
+
+    <!-- shadow + highlight for depth -->
+    <g class="m" opacity="0.9">
+      <rect x="112" y="240" width="24" height="24"/>
+      <rect x="136" y="264" width="24" height="24"/>
+      <rect x="304" y="240" width="24" height="24"/>
+    </g>
+
+    <g class="h" opacity="0.95">
+      <rect x="160" y="168" width="24" height="24"/>
+      <rect x="184" y="192" width="24" height="24"/>
+      <rect x="208" y="216" width="24" height="24"/>
+    </g>
+
+    <!-- tiny eyes for cute (still readable) -->
+    <g class="h">
+      <rect x="160" y="240" width="24" height="24"/>
+      <rect x="232" y="240" width="24" height="24"/>
+    </g>
+    <g class="o">
+      <rect x="168" y="248" width="8" height="8"/>
+      <rect x="240" y="248" width="8" height="8"/>
+    </g>
+
+  </g>
+</svg>
