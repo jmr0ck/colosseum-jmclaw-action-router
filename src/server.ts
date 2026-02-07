@@ -10,6 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
+// Web demo
+app.use(express.static('public'));
+
 const AnalyzeSchema = z.object({
   actionUrl: z.string().min(1),
   rpcUrl: z.string().url().optional(),

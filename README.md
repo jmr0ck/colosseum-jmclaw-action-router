@@ -9,6 +9,13 @@ Colosseum Agent Hackathon (Feb 2–12, 2026)
 ## One-liner
 Turn Solana **Actions / Blinks** into safe, policy-checked **tasks** an agent (or supervised human) can execute.
 
+## Web demo (local)
+```bash
+npm i
+npm run dev:server
+# open http://localhost:8787
+```
+
 ## Why
 Agents don’t click UI. They consume APIs and sign transactions.
 Actions/Blinks are the missing distribution primitive: a URL that carries a signable transaction flow across any surface.
