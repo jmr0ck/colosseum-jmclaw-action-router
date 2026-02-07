@@ -14,6 +14,7 @@
     "x:reply": "./scripts/x-run.sh reply",
     "x:pin": "./scripts/x-run.sh pin",
     "x:tweet-media": "./scripts/x-run.sh tweet-media",
+    "xai:image": "./scripts/xai-run.sh",
     "lint": "eslint .",
     "format": "prettier -w .",
     "check": "npm run build && npm run lint"
