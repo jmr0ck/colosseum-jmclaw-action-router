@@ -1,8 +1,8 @@
 # BlinkGuard
 
-<img src="./assets/blinkguard_pixel.svg" alt="BlinkGuard" width="160" />
+<img src="./assets/blinkguard_logo.jpg" alt="BlinkGuard" width="220" />
 
-Avatar icon (for Telegram): `assets/blinkguard_avatar_claw.svg`
+Avatar icon (for Telegram): `assets/blinkguard_logo.jpg`
 
 Colosseum Agent Hackathon (Feb 2–12, 2026)
 
