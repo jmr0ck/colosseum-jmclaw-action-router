@@ -37,8 +37,8 @@ export async function analyzeAction(opts: {
 
   // 2) POST to get tx
   try {
-    const { txBase64 } = await actionPost(actionUrl, opts.postBody ?? {});
-    report.post = { endpoint: actionUrl, ok: true };
+    const { txBase64, endpoint: usedEndpoint } = await actionPost(actionUrl, opts.postBody ?? {});
+    report.post = { endpoint: usedEndpoint ?? actionUrl, ok: true };
 
     if (!txBase64) {
       report.tx = null;
