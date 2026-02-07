@@ -2,10 +2,12 @@
 
 <img src="./assets/blinkguard_logo.jpg" alt="BlinkGuard" width="220" />
 
-Avatar icon (for Telegram): `assets/blinkguard_logo.jpg`
-
 Colosseum Agent Hackathon (Feb 2–12, 2026)
 
+## Links
+- Web demo: https://colosseum-jmclaw-action-router.onrender.com
+- X: https://x.com/blinkguard_bot
+- Telegram: @BlinkGuardBot (paste a Solana link)
 ## One-liner
 Paste any Solana link → BlinkGuard finds the underlying **Action/Blink**, **simulates** it, and returns a degen-friendly **REAL/MID/RUG** verdict.
 
