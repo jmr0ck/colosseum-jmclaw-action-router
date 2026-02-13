@@ -9,6 +9,7 @@ function usage() {
   npm run x:whoami
   npm run x:tweet -- "text"
   npm run x:reply -- <tweetIdOrUrl> "text"
+  npm run x:delete -- <tweetIdOrUrl>
 `);
 }
 
@@ -50,6 +51,15 @@ async function main() {
     if (!target || !text) throw new Error('Usage: reply <tweetIdOrUrl> "text"');
     const tweetId = parseTweetId(target);
     const r = await client.v2.reply(text, tweetId);
+    console.log(JSON.stringify(r, null, 2));
+    return;
+  }
+
+  if (cmd === 'delete') {
+    const target = process.argv[3];
+    if (!target) throw new Error('Usage: delete <tweetIdOrUrl>');
+    const tweetId = parseTweetId(target);
+    const r = await client.v2.deleteTweet(tweetId);
     console.log(JSON.stringify(r, null, 2));
     return;
   }

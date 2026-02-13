@@ -8,14 +8,17 @@ export type XCreds = {
 };
 
 export function loadXCredsFromEnv(): XCreds {
-  const consumerKey = process.env.X_CONSUMER_KEY;
-  const consumerSecret = process.env.X_CONSUMER_SECRET;
+  // Support both naming conventions:
+  // - X_CONSUMER_KEY / X_CONSUMER_SECRET (preferred)
+  // - X_API_KEY / X_API_SECRET (common in X dev portal)
+  const consumerKey = process.env.X_CONSUMER_KEY ?? process.env.X_API_KEY;
+  const consumerSecret = process.env.X_CONSUMER_SECRET ?? process.env.X_API_SECRET;
   const accessToken = process.env.X_ACCESS_TOKEN;
   const accessTokenSecret = process.env.X_ACCESS_TOKEN_SECRET;
 
   const missing = [
-    !consumerKey && 'X_CONSUMER_KEY',
-    !consumerSecret && 'X_CONSUMER_SECRET',
+    !consumerKey && 'X_CONSUMER_KEY(or X_API_KEY)',
+    !consumerSecret && 'X_CONSUMER_SECRET(or X_API_SECRET)',
     !accessToken && 'X_ACCESS_TOKEN',
     !accessTokenSecret && 'X_ACCESS_TOKEN_SECRET',
   ].filter(Boolean);

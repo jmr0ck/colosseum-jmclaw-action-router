@@ -52,17 +52,23 @@ export async function xaiImageGenerate(opts: {
   };
 
   let raw: any;
+  let errA: any = null;
   try {
     raw = await doReq(bodyA);
-  } catch {
-    // Fallback to OpenAI-compat style.
+  } catch (e) {
+    errA = e;
+    // Fallback to OpenAI-compat style (some gateways proxy this).
     const bodyB: any = {
       model,
       prompt,
-      size: '1024x1024',
+      // NOTE: xAI v1/images/generations may reject `size`; keep fallback minimal.
       response_format: 'b64_json',
     };
-    raw = await doReq(bodyB);
+    try {
+      raw = await doReq(bodyB);
+    } catch {
+      throw errA;
+    }
   }
 
   // Parse common response shapes.
