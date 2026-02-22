@@ -1,0 +1,73 @@
+{
+  "chains": [
+    {
+      "id": "solana",
+      "name": "Solana",
+      "symbol": "SOL",
+      "rpc": "${SOLANA_RPC}",
+      "explorer": "https://solscan.io",
+      "supported": true,
+      "features": ["tokens", "nfts", "defi", "agents"]
+    },
+    {
+      "id": "ethereum",
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "rpc": "${ETHEREUM_RPC}",
+      "explorer": "https://etherscan.io",
+      "supported": true,
+      "features": ["tokens", "nfts", "defi", "agents"]
+    },
+    {
+      "id": "megaeth",
+      "name": "MegaETH",
+      "symbol": "MEGA",
+      "rpc": "${MEGAETH_RPC}",
+      "explorer": "https://megaexplorer.io",
+      "supported": true,
+      "features": ["tokens", "defi", "high-throughput"],
+      "notes": "Hyperliquid rival with 2.5% MEGA incentives program"
+    },
+    {
+      "id": "hyperliquid",
+      "name": "Hyperliquid",
+      "symbol": "HYPE",
+      "rpc": "${HYPERLIQUID_RPC}",
+      "explorer": "https://hyperliquid.xyz/explorer",
+      "supported": true,
+      "features": ["perpetuals", "spot", "high-velocity"],
+      "notes": "High-performance exchange, competitor to MegaETH"
+    },
+    {
+      "id": "base",
+      "name": "Base",
+      "symbol": "ETH",
+      "rpc": "${BASE_RPC}",
+      "explorer": "https://basescan.org",
+      "supported": true,
+      "features": ["tokens", "nfts", "defi", "agents"]
+    },
+    {
+      "id": "arbitrum",
+      "name": "Arbitrum",
+      "symbol": "ETH",
+      "rpc": "${ARBITRUM_RPC}",
+      "explorer": "https://arbiscan.io",
+      "supported": true,
+      "features": ["tokens", "nfts", "defi"]
+    },
+    {
+      "id": "avalanche",
+      "name": "Avalanche",
+      "symbol": "AVAX",
+      "rpc": "${AVALANCHE_RPC}",
+      "explorer": "https://snowtrace.io",
+      "supported": true,
+      "features": ["tokens", "nfts", "defi"]
+    }
+  ],
+  "metadata": {
+    "lastUpdated": "2026-02-21",
+    "version": "1.0.0"
+  }
+}
