@@ -6,6 +6,7 @@ import { scoreRisk, verdictFromScore } from './risk.js';
 import type { Policy, RouterReport } from './types.js';
 import {
   decodeVersionedTransactionFromBase64,
+  extractIntentSummary,
   extractTouchedProgramIds,
   fetchLookupTableAccounts,
 } from './tx.js';
@@ -67,11 +68,9 @@ export async function analyzeAction(opts: {
   }
 
   // 2) POST to get tx
-  let originalTxBase64: string | undefined;
   try {
     const { txBase64, endpoint: usedEndpoint } = await actionPost(actionUrl, opts.postBody ?? {});
     report.post = { endpoint: usedEndpoint ?? actionUrl, ok: true };
-    originalTxBase64 = txBase64;
 
     if (!txBase64) {
       report.tx = null;
@@ -95,6 +94,13 @@ export async function analyzeAction(opts: {
     const lookupTables = await fetchLookupTableAccounts({ connection, tx: vtx });
     const touchedProgramIds = extractTouchedProgramIds({ tx: vtx, lookupTables });
     report.tx.touchedProgramIds = touchedProgramIds;
+
+    // Intent (best-effort)
+    try {
+      (report as any).intent = extractIntentSummary({ tx: vtx, lookupTables });
+    } catch (e: any) {
+      (report as any).intent = { error: String(e?.message ?? e) };
+    }
 
     // 3) Simulate
     try {

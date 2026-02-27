@@ -48,4 +48,18 @@ export type RouterReport = {
     verdict: 'REAL' | 'MID' | 'RUG';
     signals: Array<{ code: string; severity: 'info' | 'low' | 'med' | 'high'; message: string }>;
   };
+  intent?: {
+    instructions: Array<{
+      programId: string;
+      program: 'system' | 'spl-token' | 'unknown';
+      kind: string;
+      amount?: string;
+      mint?: string;
+      from?: string;
+      to?: string;
+      authority?: string;
+      details?: string;
+    }>;
+    warnings: string[];
+  };
 };

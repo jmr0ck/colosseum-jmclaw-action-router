@@ -205,7 +205,16 @@
         const risk = lastReport?.risk;
         const verdict = risk?.verdict ?? 'UNKNOWN';
         const score = typeof risk?.score === 'number' ? risk.score : null;
-        const why = (risk?.signals ?? []).filter((s) => s.code !== 'CLEAN').slice(0, 2).map((s) => `- ${s.message}`).join('\n');
+        const why = (risk?.signals ?? [])
+          .filter((s) => s.code !== 'CLEAN')
+          .slice(0, 2)
+          .map((s) => `- ${s.message}`)
+          .join('\n');
+
+        const intent = lastReport?.intent;
+        const intentFirst = (intent?.instructions ?? []).find((x) => x.kind && x.kind !== 'unknown');
+        const intentLine = intentFirst ? `Intent: ${intentFirst.program}:${intentFirst.kind}` : '';
+        const intentWarn = (intent?.warnings ?? []).slice(0, 2).map((w) => `- ⚠️ ${w}`).join('\n');
 
         const header = score != null ? `Verdict: ${verdict} (${score}/100)` : `Verdict: ${verdict}`;
 
@@ -215,9 +224,13 @@
             `Title: ${title}`,
             `Sim: ${simOk ? 'OK' : 'FAIL'}`,
             `Touched programs: ${touched}`,
+            intentLine ? `\n${intentLine}` : '',
+            intentWarn ? `\nIntent warnings:\n${intentWarn}` : '',
             why ? `\nWhy:\n${why}` : '',
             `\nAction URL:\n${lastReport.actionUrl}`,
-          ].filter(Boolean).join('\n')
+          ]
+            .filter(Boolean)
+            .join('\n')
         );
       }
 

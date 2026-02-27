@@ -24,10 +24,28 @@ export function formatShort(report: any): string {
     .slice(0, 2)
     .map((s: any) => `- ${s.message}`);
 
+  const intent = report?.intent;
+  const intentLine = (() => {
+    const ixs = intent?.instructions ?? [];
+    if (!Array.isArray(ixs) || ixs.length === 0) return null;
+    const first = ixs.find((x: any) => x.kind && x.kind !== 'unknown') ?? ixs[0];
+    if (!first) return null;
+    if (first.kind === 'transfer' && first.program === 'system') return 'Intent: SOL transfer';
+    if (first.kind === 'approve' && first.program === 'spl-token') return 'Intent: token approval (delegate)';
+    if (first.kind === 'transfer' && first.program === 'spl-token') return 'Intent: token transfer';
+    if (first.kind === 'transferChecked') return 'Intent: token transfer (checked)';
+    if (first.kind === 'setAuthority') return 'Intent: token authority change';
+    return `Intent: ${first.program}:${first.kind}`;
+  })();
+
+  const warn = (intent?.warnings ?? []).slice(0, 2).map((w: string) => `- ⚠️ ${w.replaceAll('_', ' ')}`);
+
   const lines: string[] = [];
   lines.push(`${verdictWord}  (${score}/100)`);
   lines.push(`${title}${host ? ` — ${host}` : ''}`);
   lines.push(`〔${badges.join(' · ')}〕`);
+  if (intentLine) lines.push(intentLine);
+  if (warn.length) lines.push(...warn);
   if (reasons.length) lines.push(...reasons);
   else lines.push('- no obvious red flags (MVP heuristics)');
 
@@ -68,6 +86,28 @@ export function formatReceipts(report: any): string {
   lines.push(`Touched programs (${touched.length}):`);
   for (const p of touched.slice(0, 20)) lines.push(`- ${p}`);
   if (touched.length > 20) lines.push(`- ... (+${touched.length - 20} more)`);
+  // Intent
+  const intent = report?.intent;
+  if (intent?.instructions?.length) {
+    lines.push('');
+    lines.push('Intent (best-effort):');
+    for (const ix of intent.instructions.slice(0, 8)) {
+      const bits = [`${ix.program}:${ix.kind}`];
+      if (ix.amount) bits.push(`amt=${ix.amount}`);
+      if (ix.mint) bits.push(`mint=${ix.mint}`);
+      if (ix.from) bits.push(`from=${ix.from}`);
+      if (ix.to) bits.push(`to=${ix.to}`);
+      if (ix.details) bits.push(ix.details);
+      lines.push(`- ${bits.join(' ')}`);
+    }
+    if (intent.instructions.length > 8) lines.push(`- ... (+${intent.instructions.length - 8} more)`);
+    if (intent.warnings?.length) {
+      lines.push('');
+      lines.push('Intent warnings:');
+      for (const w of intent.warnings.slice(0, 8)) lines.push(`- ⚠️ ${w}`);
+    }
+  }
+
   lines.push('');
   lines.push(`Simulation: ${simOk ? 'OK' : 'FAIL'}`);
   if (!simOk && simErr) lines.push(`Sim err: ${simErr}`);

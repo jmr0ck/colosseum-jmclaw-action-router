@@ -26,6 +26,25 @@ export function scoreRisk(report: {
     });
   }
 
+  // Intent warnings (if available)
+  const intentWarnings: string[] = (report as any)?.intent?.warnings ?? [];
+  if (intentWarnings.includes('UNLIMITED_TOKEN_APPROVAL')) {
+    score += 25;
+    signals.push({
+      code: 'UNLIMITED_APPROVAL',
+      severity: 'high',
+      message: 'unlimited token approval detected (delegate can drain tokens)',
+    });
+  }
+  if (intentWarnings.includes('TOKEN_AUTHORITY_CHANGE')) {
+    score += 25;
+    signals.push({
+      code: 'AUTHORITY_CHANGE',
+      severity: 'high',
+      message: 'token authority change detected (can permanently seize control)',
+    });
+  }
+
   // Unknown/rare programs heuristic (very naive: just count).
   if (touched.length >= 6) {
     score += 15;
