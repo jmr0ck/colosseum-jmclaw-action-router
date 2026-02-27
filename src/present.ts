@@ -8,14 +8,26 @@ export function formatShort(report: any): string {
   const title = report?.get?.title ?? '(no title)';
   const host = safeHost(report?.actionUrl);
 
-  const reasons = signals
-    .filter((s: any) => s.code !== 'CLEAN')
-    .slice(0, 3)
+  const top = signals.filter((s: any) => s.code !== 'CLEAN');
+
+  // Compact “mobile-card” style summary
+  const simOk = report?.simulation?.ok;
+  const touchedN = report?.tx?.touchedProgramIds?.length ?? 0;
+
+  const badges: string[] = [];
+  badges.push(simOk === false ? 'SIM:FAIL' : simOk === true ? 'SIM:OK' : 'SIM:?' );
+  badges.push(`PROGS:${touchedN}`);
+  if (top.some((s: any) => s.code === 'EPHEMERAL_HOST' || s.code === 'TLD_RISK')) badges.push('HOST:RISK');
+  if (top.some((s: any) => s.code === 'AGENT_EXEC')) badges.push('AGENT');
+
+  const reasons = top
+    .slice(0, 2)
     .map((s: any) => `- ${s.message}`);
 
   const lines: string[] = [];
   lines.push(`${verdictWord}  (${score}/100)`);
   lines.push(`${title}${host ? ` — ${host}` : ''}`);
+  lines.push(`〔${badges.join(' · ')}〕`);
   if (reasons.length) lines.push(...reasons);
   else lines.push('- no obvious red flags (MVP heuristics)');
 

@@ -197,11 +197,28 @@
 
         lastReport = data.report;
 
-        // short display (very basic — Telegram bot has the full UX)
+        // short display (basic “card”)
         const title = lastReport?.get?.title ?? '(no title)';
         const simOk = lastReport?.simulation?.ok;
         const touched = lastReport?.tx?.touchedProgramIds?.length ?? 0;
-        setOut(`Title: ${title}\nSim: ${simOk ? 'OK' : 'FAIL'}\nTouched programs: ${touched}\n\nAction URL:\n${lastReport.actionUrl}`);
+
+        const risk = lastReport?.risk;
+        const verdict = risk?.verdict ?? 'UNKNOWN';
+        const score = typeof risk?.score === 'number' ? risk.score : null;
+        const why = (risk?.signals ?? []).filter((s) => s.code !== 'CLEAN').slice(0, 2).map((s) => `- ${s.message}`).join('\n');
+
+        const header = score != null ? `Verdict: ${verdict} (${score}/100)` : `Verdict: ${verdict}`;
+
+        setOut(
+          [
+            header,
+            `Title: ${title}`,
+            `Sim: ${simOk ? 'OK' : 'FAIL'}`,
+            `Touched programs: ${touched}`,
+            why ? `\nWhy:\n${why}` : '',
+            `\nAction URL:\n${lastReport.actionUrl}`,
+          ].filter(Boolean).join('\n')
+        );
       }
 
       function eli5() {

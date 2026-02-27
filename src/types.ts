@@ -43,4 +43,9 @@ export type RouterReport = {
     passed: boolean;
     reasons: string[];
   };
+  risk?: {
+    score: number;
+    verdict: 'REAL' | 'MID' | 'RUG';
+    signals: Array<{ code: string; severity: 'info' | 'low' | 'med' | 'high'; message: string }>;
+  };
 };

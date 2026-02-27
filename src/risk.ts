@@ -7,6 +7,7 @@ export type RiskSignal = {
 // Very lightweight heuristics for MVP. We can evolve this into a real policy engine.
 export function scoreRisk(report: {
   actionUrl: string;
+  get?: { title?: string; description?: string; label?: string } | null;
   simulation?: { ok: boolean; err?: string; logs?: string[] };
   tx?: { touchedProgramIds?: string[] } | null;
 }): { score: number; signals: RiskSignal[] } {
@@ -60,6 +61,19 @@ export function scoreRisk(report: {
         code: 'TLD_RISK',
         severity: 'low',
         message: `higher-risk TLD (${host})`,
+      });
+    }
+
+    // Agent-executed context (heuristic): if the Action metadata looks agent/automation oriented,
+    // raise caution because unattended execution magnifies risk.
+    const text = `${report.get?.title ?? ''} ${report.get?.label ?? ''} ${report.get?.description ?? ''} ${u.pathname}`.toLowerCase();
+    const agentLike = /\bagent\b|automation|autonomous|bot\b|x402|mcp|frames\b|scheduled|recurring|webhook|payment rail/.test(text);
+    if (agentLike) {
+      score += 8;
+      signals.push({
+        code: 'AGENT_EXEC',
+        severity: 'med',
+        message: 'looks agent/automation-oriented — unattended execution increases risk (verify extra hard)',
       });
     }
   } catch {

@@ -18,4 +18,9 @@ set -a
 source "$X_ENV_FILE"
 set +a
 
-node dist/xCli.js "$CMD" "$@"
+if [[ -f dist/xCli.js ]]; then
+  node dist/xCli.js "$CMD" "$@"
+else
+  # fallback for dev environments where dist/ is not present
+  npx --yes tsx src/xCli.ts "$CMD" "$@"
+fi
