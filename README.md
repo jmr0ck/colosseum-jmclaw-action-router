@@ -8,8 +8,28 @@ Colosseum Agent Hackathon (Feb 2–12, 2026)
 - Web demo: https://colosseum-jmclaw-action-router.onrender.com
 - X: https://x.com/blinkguard_bot
 - Telegram: @BlinkGuardBot (paste a Solana link)
+
 ## One-liner
-Paste any Solana link → BlinkGuard finds the underlying **Action/Blink**, **simulates** it, and returns a degen-friendly **REAL/MID/RUG** verdict.
+Paste any Solana link → BlinkGuard finds the underlying **Action/Blink**, **simulates** it, and helps users **verify before signing**.
+
+## Product direction
+BlinkGuard is evolving from a hackathon Action/Blink scanner into a broader **crypto trust layer** focused on:
+- link verification
+- signing clarity
+- source trust context
+- education-first risk explanation
+
+Core thesis:
+- **Clarity beats fear.**
+- **Receipts over vibes.**
+- **Verify before signing.**
+
+Planned next surface:
+- a lightweight browser extension that checks both the **link** and the **source behind the link** before the user clicks or signs
+
+See:
+- `docs/BLINKGUARD_EXTENSION_SPEC.md`
+- `docs/BLINKGUARD_X_TRUST_SIGNALS.md`
 
 ## What works right now (MVP)
 - ✅ Action/Blink URL normalization (dial.to / solana-action / direct)
@@ -18,6 +38,7 @@ Paste any Solana link → BlinkGuard finds the underlying **Action/Blink**, **si
 - ✅ RPC **simulation** (simulate-only; does NOT send transactions)
 - ✅ Telegram bot UX: short verdict + **ELI5 / Receipts / Share** + mini-game
 - ✅ Batch scan (paste multiple links)
+- ✅ Text-first education workflow for helping users understand what a link/request appears to do before signing
 
 > Note: execution/signing is intentionally not enabled in this hackathon MVP.
 
@@ -73,3 +94,9 @@ This project builds:
 
 ## Next
 See `docs/PLAN.md`.
+
+Current BlinkGuard roadmap additions:
+- browser extension V1 (manual link check + context menu + trust context)
+- X/source trust signals (rename risk, identity mismatch, destination mismatch, urgency patterns)
+- stronger pre-sign explanation UX
+- education-first outputs designed for trust, saves, and shares
