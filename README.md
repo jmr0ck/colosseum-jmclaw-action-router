@@ -100,3 +100,20 @@ Current BlinkGuard roadmap additions:
 - X/source trust signals (rename risk, identity mismatch, destination mismatch, urgency patterns)
 - stronger pre-sign explanation UX
 - education-first outputs designed for trust, saves, and shares
+
+## Frontier website
+
+A dedicated Next.js hackathon site now lives under `website/`.
+
+Run it locally:
+
+```bash
+cd website
+npm install
+npm run dev
+```
+
+Routes:
+- `/` — landing page
+- `/demo` — demo walkthrough
+- `/architecture` — architecture + trust engine overview
